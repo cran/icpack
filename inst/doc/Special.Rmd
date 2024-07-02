@@ -1,0 +1,217 @@
+---
+title: "Parametric models with {icpack}"
+author: "Hein Putter & Paul Eilers"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Parametric models with {icpack}}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteEncoding[UTF-8]{inputenc}
+---
+
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4,
+                      echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Introduction
+
+The purpose of this vignette is to show how {`icpack`} can be used to fit certain parametric models, namely with constant hazards, Gompertz models and Weibull models. We will use the ovarian cancer data, because with right-censored data we can easily check the results of {`icpack`} with other methods. Those other methods do not extend to interval-censored data, while {`icpack`} does.
+
+For information on the ovarian cancer data we refer to the vignette "Smooth modeling of right-censored survival data with {`icpack`}", or the help file. First the package needs to be loaded.
+
+```{r icpack}
+library(icpack)
+library(ggplot2)
+```
+
+# Constant hazards
+
+Using `icfit` it is possible to fit proportional hazards models to right-censored and interval-censored data with constant baseline hazards. It is of interest to start with a model without covariates and right-censored data, since then we know what the maximum likelihood of the underlying constant hazard is, and we also have a straightforward expression for its confidence interval. Here is how the model is fit using `icfit`.
+
+```{r icfit_cst}
+ic_fit_cst <- icfit(Surv(time, d) ~ 1, data = Ova,
+                    bdeg=1, pord=1, lambda=1e+06, update_lambda=FALSE)
+ic_fit_cst
+```
+
+We use `bdeg=1` to use B-splines of degree 1 (constants), `pord=1` to penalize first order differences of coefficients of the B-splines, `lambda=1e+06` to use an extremely high penalty, and `update_lambda=FALSE` to make sure that lambda is not updated in the process. Note that the effective dimension of the log-hazard is effectively 1, so the log-hazard and hazard are constant. A plot of the hazard shows a straight line.
+
+```{r plot_icfit_cst}
+plot(ic_fit_cst)
+```
+
+The value fo the hazard and its 95% confidence interval can be seen by printing the result of `predict`.
+
+```{r predict_icfit_cst}
+pic_fit_cst <- predict(ic_fit_cst)[, c("time", "haz", "sehaz", "lowerhaz", "upperhaz")]
+head(pic_fit_cst)
+tail(pic_fit_cst)
+```
+
+We see that the hazard is estimated as $\hat{\lambda} = 0.000747$, with 95\% confidence interval about 0.000662 -- 0.000842. The estimate and confidence interval are obtained using the general theory outlined in Putter, Gampe \& Eilers (2023). Nevertheless, they coincide closely with standard theory, which says that $\hat{\lambda}_{\textrm{MLE}} = D/T$, where $D = \sum_{i=1}^n d_i$ is the total number of events and $T = \sum_{i=1}^n t_i$ is the total follow-up time in the data. (Here $(t_i, d_i)$ for subject $i=1,\ldots,n$ are the usual time and status indicators in right-censored time-to-event data.) Moreover, the variance of the log of $\hat{\lambda}_{\textrm{MLE}}$ is given by $1/D$, so a 95\% confidence interval for $\lambda$ is given by $\exp( \log(\hat{\lambda}_{\textrm{MLE}}) \pm 1.96/\sqrt{D} )$. In our data this would yield
+
+```{r DTrate}
+D <- sum(Ova$d)
+T <- sum(Ova$time)
+rate <- D / T
+lograte <- log(rate)
+selograte <- 1 / sqrt(D)
+lowerlograte <- lograte - qnorm(0.975) * selograte
+upperlograte <- lograte + qnorm(0.975) * selograte
+data.frame(D=D, T=T, rate=rate, lower=exp(lowerlograte), upper=exp(upperlograte))
+```
+
+We see that this is quite close to what `icfit` has given us.
+
+We can go one step further with `icfit` and add the covariate effects to the constant baseline hazard.
+
+```{r icfit_cst_covs}
+ic_fit_cst <- icfit(Surv(time, d) ~ Diameter + FIGO + Karnofsky, data = Ova,
+                    bdeg=1, pord=1, lambda=1e+06, update_lambda=FALSE)
+ic_fit_cst
+```
+
+Also this model can be fitted in an alternative way, namely using direct Poisson regression. To achieve this `d` is considered the outcome variable and the logarithm of the follow-up time is added as an offset. Here is the code to run it.
+
+```{r Poissonreg}
+Ova$logtime <- log(Ova$time)
+pois_fit <- glm(d ~ Diameter + FIGO + Karnofsky + offset(logtime), family=poisson(), data = Ova)
+spois_fit <- summary(pois_fit)
+spois_fit
+```
+
+We see that the estimates of the covariate effects are quite similar to the estimates from `ic_fit_cst`. Moreover the `(Intercept)` term is the logarithm of the (constant) baseline hazard. If we exponeniate it the corresponding baseline hazard and 95\% confidence interval are given by
+
+```{r baselineCI}
+lograte <- spois_fit$coefficients[1, 1]
+selograte <- spois_fit$coefficients[1, 2]
+lowerlograte <- lograte - qnorm(0.975) * selograte
+upperlograte <- lograte + qnorm(0.975) * selograte
+data.frame(rate=exp(lograte), lower=exp(lowerlograte), upper=exp(upperlograte))
+```
+
+The result from `icfit` is visualised as
+
+```{r plot_icfit_cst_covs}
+plot(ic_fit_cst, xlab="Days since randomisation", ylab="Hazard",
+     title="Constant baseline hazard") + ylim(0, 0.0052)
+```
+
+Naturally, direct Poisson regression using `glm` is preferable to `icfit` in case of constant hazards both in terms of speed and accuracy, but it is comforting to see  that `icfit` does give rapid and reliable results also here. Moreover, Poisson regression cannot be used directly with interval-censored data.
+
+Precision in `icfit` can be increased (at the cost of extra computation time) by increasing `nt`. If we remove the covariates again, we set `nt` to 500, and look at the hazard and its 95% confidence interval, which again can be seen by printing the result of `predict`, we do see that the results are quite a bit closer to that of the occurrence over exposure theoretical ones.
+
+```{r icfit_nt500}
+ic_fit_cst <- icfit(Surv(time, d) ~ 1, data = Ova, nt=500,
+                    bdeg=1, pord=1, lambda=1e+06, update_lambda=FALSE)
+pic_fit_cst <- predict(ic_fit_cst)[, c("time", "haz", "sehaz", "lowerhaz", "upperhaz")]
+head(pic_fit_cst)
+tail(pic_fit_cst)
+```
+
+Note that only with right-censored data we can use the occurrence over exposure theory and Poisson GLM. Importantly, {`icpack`} can also be used to fit models (with and without covariates) with constant (baseline) hazards for interval-censored data, while there is no standard alternative for this situation.
+
+# "Gompertz" models
+
+When we set the degree of the B-splines to 1 and the order of the penalty to 2, and take a very large value of lambda, we get a model for which the log-hazard is a straight line. The corresponding hazard is of the form $h(t) = a e^{bt}$. This corresponds to the hazard of a Gompertz model, provided $b>0$. Gompertz rates are often used to represent rates of mortality; when $b<0$ then this implies that very large, or indeed infinite values are not uncommon, since then $\int_0^\infty h(t) dt$ is finite. For modeling human mortality this obviously is a problem, but for many other practical purposes we may ignore this issue. But implicitly allowing for negative $b$ by `icfit` is the reason for referring to "Gompertz" rather than Gompertz models.
+
+Here is the fit of the "Gompertz" model using `icfit`.
+
+```{r icfit_gompertz}
+ic_fit_gompertz <- icfit(Surv(time, d) ~ 1, data = Ova,
+                         bdeg=1, pord=2, lambda=1e+06, update_lambda=FALSE)
+ic_fit_gompertz
+```
+
+We see that the effective dimension of the log-hazard is 2, so a straight
+line. Below is a plot of the hazard.
+
+```{r plot_gompertz}
+plot(ic_fit_gompertz) + ylim(0, 0.00125)
+```
+
+The fact that the log-hazard is a straight line is easier to see after transforming the y-axis.
+
+```{r plot_gompertz_logy}
+plot(ic_fit_gompertz) + scale_y_continuous(trans='log10')
+```
+
+Note that the "Gompertz" hazard rate is implicitly obtained by setting the order of the penalty to 2. From the result of `icfit` the values of $a$ and $b$ and their standard errors can only be derived indirectly.
+
+## Weibull models
+
+Also Weibull models can be fitted with `icfit` in the same indirect way, by setting `bdeg`, `pord`, and `lambda`, with one additional trick, namely time warping. The hazard of a Weibull distribution is of the form $h(t) = \alpha \lambda t^{\alpha-1}$, with $\lambda > 0$. If we take `pord=2`, `lambda = 1e+06`, and work with $\log(t)$ instead of $t$ itself, the form of the log-hazard would be $\beta_0 + \beta_1 \log(t)$, which corresponds to a Weibull hazard with $\alpha = \beta_1 + 1$, $\lambda = e^{\beta_0} / (\beta_1 + 1)$.
+
+Here is the fit of the Weibull model with `icfit`. This works fine with our present way of using time in days; `time=1` corresponds to 1 day after randomisation. When time is in years, the logarithm of time would be negative for all events and censorings before one year. In that case adding a constant, or alternatively, defining `logtime` below as `log(Ova$time * 365.25)` would solve the issue.
+
+```{r icfit_weibull}
+Ova$logtime <- log(Ova$time)
+ic_fit_weibull <- icfit(Surv(logtime, d) ~ 1, data = Ova,
+                         bdeg=1, pord=2, lambda=1e+06, update_lambda=FALSE)
+ic_fit_weibull
+```
+
+Here is a plot of the hazard with log-transformed y-axis. Time on the x-axis actually refers to the logarithm (base 10) of the original time, so 3 on the x-axis corresponds to $t=1000$.
+
+```{r plot_icfit_weibull}
+plot(ic_fit_weibull) + scale_y_continuous(trans='log')
+```
+
+To see everything on the original time scale and to facilitate future comparison with a direct parametric fit using `survreg`, let us extract the `data` elements of the plot, and explicitly transform time back into the original time.
+
+We need to be careful though. Note that the estimated hazard with transformed time measures the expected number of events per *transformed* time unit, not in the original time unit. So we need not only back transform time, but also the hazard itself. If $\tilde{h}(u)$ denotes the hazard in transformed time $u = g(t)$, then in the original time scale $t = f(u) = g^{-1}(u)$ we have that $h(t) = \tilde{h}(u) / f^\prime(u)$. With $u = g(t) = \log(t)$, $t = f(u) = \exp(u)$, we get $h(t) = \tilde{h}(u) / \exp(u) = \tilde{h}(\log(t)) / t$.
+
+```{r pweib}
+pw <- plot(ic_fit_weibull)$data
+head(pw)[, 1:5]
+tail(pw)[, 1:5]
+pw$u <- pw$time
+pw$time <- exp(pw$u)
+pw$haz <- pw$haz / pw$time
+pw$lowerhaz <- pw$lowerhaz / pw$time
+pw$upperhaz <- pw$upperhaz / pw$time
+head(pw)[, 1:5]
+tail(pw)[, 1:5]
+```
+
+Here is a plot of the result.
+
+```{r plot_pweib}
+plt <- ggplot(pw) +
+  geom_ribbon(aes(x = pw$time, ymin = pw$lowerhaz, ymax = pw$upperhaz),
+              fill = 'lightgrey') +
+  geom_line(aes(x = pw$time, y = pw$lowerhaz), colour = 'blue') +
+  geom_line(aes(x = pw$time, y = pw$upperhaz), colour = 'blue') +
+  geom_line(aes(x = pw$time, y = pw$haz), size = 1, colour = 'blue', lty = 1) +
+  ylim(0, 0.002) + 
+  ggtitle("Weibull hazard fit") + xlab("Days since randomisation") +
+  ylab("Hazard") + theme_bw() + theme(plot.title = element_text(hjust = 0.5))
+plt
+```
+
+Let us compare this now with `survreg`. It is most convenient to use the wrapper provided in `flexsurvreg`, because it uses a parametrisation close to ours. The parametrisation in `flexsurvreg` is of the form $S(t) = \exp(-(t/\mu^\prime)^{\alpha^\prime})$, compared to our $S(t) = \exp(-\lambda t^{\alpha})$, from which we see that $\alpha = \alpha^\prime$ and $\lambda = 1 / (\mu^\prime)^{\alpha^\prime}$. We add the fit from `survreg` with a dashed line to the original plot.
+
+```{r flexsurvreg}
+library(flexsurv)
+fsr <- flexsurvreg(Surv(time, d) ~ 1, data = Ova, dist = "weibull")
+fsr
+
+alp <- exp(fsr$coef[1])
+mu <- exp(fsr$coef[2])
+lam <- 1 / mu^alp
+hw <- function(t, alp, lam) alp * lam * t^(alp - 1)
+maxt <- max(Ova$time)
+pw$haz_survreg <- hw(pw$time, alp, lam)
+
+plt <- plt +
+  geom_line(aes(x = pw$time, y = pw$haz_survreg), size = 1, lty = 2)
+plt
+```
+
+The fit is quite similar, although not entirely equivalent.
+
+## References
+
+Putter, H., Gampe, J., Eilers, P. H. (2023). Smooth hazard regression for interval censored data. _Submitted for publication_.

@@ -1,0 +1,321 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  letterpaper,
+  DIV=11,
+  numbers=noendperiod]{scrartcl}
+
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else  
+    % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+% Make \paragraph and \subparagraph free-standing
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+
+\KOMAoption{captions}{tableheading}
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{tcolorbox}{}{\usepackage[skins,breakable]{tcolorbox}}
+\makeatother
+\makeatletter
+\@ifundefined{shadecolor}{\definecolor{shadecolor}{rgb}{.97, .97, .97}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={Details of computations in the package icpack},
+  pdfauthor={Paul Eilers},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Details of computations in the package \texttt{icpack}}
+\author{Paul Eilers}
+\date{2024-04-01}
+
+\begin{document}
+\maketitle
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[borderline west={3pt}{0pt}{shadecolor}, breakable, interior hidden, boxrule=0pt, enhanced, frame hidden, sharp corners]}{\end{tcolorbox}}\fi
+
+\hypertarget{introduction}{%
+\subsection{Introduction}\label{introduction}}
+
+The package \texttt{icpack} fits survival models with a smooth
+semi-parametric baseline to interval-censored data, using P-splines. The
+proper amount of smoothing is obtained using a mixed model algorithm.
+The core is an Expectation-Maximization (EM) algorithm with proper
+calculation of standard errors. We have paid special attention to
+efficient computation, exploiting high-level matrix operations.
+
+This document presents technical details about the M-step that maximizes
+the penalized likelihood. Straightforward organization of the
+computations leads to very large matrices. That can be avoided by
+recognizing and expliting their very regular structures.
+
+The notation is a somewhat experimental mix of mathematics and
+\texttt{R} code.
+
+\hypertarget{simple-poisson-regression}{%
+\subsubsection{Simple Poisson
+regression}\label{simple-poisson-regression}}
+
+Our approach is based on Poisson regression. In the simple case without
+interval censoring, the data are the exact times of occurrence of either
+an event or censoring. We divide the time axis into a relatively large
+number, say \texttt{nt\ =\ 100}, intervals, which we call bins to avoid
+confusion with censoring intervals. In each bin we count the number of
+subjects at risk and the number of events, giving the vectors \texttt{r}
+and \texttt{y}, each with \texttt{nt} elements.
+
+Each subjects adds a 1 to all bins in \texttt{r} in which it is at risk.
+If it experiences the event in bin \texttt{j}, 1 is added to
+\texttt{y{[}j{]}}; if it is censored it does not contribute anything to
+\texttt{y}.
+
+We indicate the hazard with the vector \texttt{h}. If \texttt{mu} is the
+vector of expected values of \texttt{y}, then \texttt{mu\ =\ h\ *\ r} .
+We do not model \texttt{h} itself, but its logarithm, \texttt{eta},
+writing it as a sum of B-splines: \texttt{eta\ =\ B\ \%*\%\ cb}, where
+the columns of \texttt{B} contain the B-splines and \texttt{cb} holds
+their coefficients.
+
+To get a smooth log-hazard, we use a roughness penalty, which will be
+introduced later on.
+
+The Poisson log-likelihood is \texttt{ll\ =\ sum(...)} and maximizing it
+with respect to \texttt{cb} leads to the non-linear system of equations
+\texttt{t(B)\ \%*\%\ (y\ -\ mu)\ =\ 0}. If \texttt{cb\_} is an
+approximation to the solution, \texttt{mu\_\ =\ exp(B\ \%*\%\ cb\_)},
+and \texttt{M\_\ =\ diag(mu\_)}, iterative solution of
+
+\texttt{(t(B)\ \%*\%\ M\_\ \%*\%\ B)\ \%*\%\ cb\ =\ t(B)\ \%*\%\ (y\ -\ mu\_\ +\ M\_\ \%*\%\ B\ \%*\%\ cb\_)}
+
+leads to the final solution.
+
+The roughness penalty is
+\texttt{lambda\ *\ sum((D\ \%*\%\ cb)\ \^{}\ 2)}, with
+\texttt{D\ =\ diff(diag(nb),\ diff\ =\ 2)}, a sum of squared (second
+order) differences of adjacent elements of \texttt{cb}. It was advocated
+by Eilers and Marx, as the penalty for P-splines. The system of
+equations changes to
+
+\texttt{(t(B)\ \%*\%\ M\_\ \%*\%\ B\ +\ lambda\ *\ t(D)\ \%*\%\ D)\ \%*\%\ cb\ =\ t(B)\ \%*\%\ (y\ -\ mu\_\ +\ M\_\ \%*\%\ B\ \%*\%\ cb\_)}.
+
+The computing load is light. The number of B-splines, \texttt{nb}, does
+not have to be large, say 20, so \texttt{B} is a relatively small matrix
+of 100 by 20, independent of the number of subjects in the data. As we
+will see soon, covariates complicate the picture a lot.
+
+\hypertarget{poisson-regression-with-covariates}{%
+\subsubsection{Poisson regression with
+covariates}\label{poisson-regression-with-covariates}}
+
+To handle covariates, given in the matrix \texttt{X} with \texttt{n}
+rows and \texttt{nx} columns, we assume proportional hazards and a
+smooth baseline hazard vector \texttt{h0\ =\ exp(B\ \%*\%\ cb)}. With
+\texttt{H{[}i,\ j{]}}, the hazard for subject \texttt{i} in bin
+\texttt{j}, we have
+\texttt{H{[}i,\ {]}\ =\ exp(X{[}i,\ {]}\ \%*\%\ cx\ +\ B\ \%*\%\ cb)}.
+
+We can no longer work with vectors. The data are coded in two matrices,
+\texttt{R} and \texttt{Y}. Row \texttt{i} of \texttt{R} tells us in
+which bins subject \texttt{i} was at risk, while row \texttt{i} of
+\texttt{Y} records when the event occurred for this subject, if it
+occurred. Hence \texttt{Y{[}i,\ j{]}\ =\ 1} in case of an event of
+subject \texttt{i} in bin \texttt{j}. If subject \texttt{ì} was
+censored, then row \texttt{ì} of \texttt{Y} contains only zeros.
+
+To do straightforward Poisson regression, we must vectorize \texttt{R}
+and \texttt{Y} and construct an appropriate design matrix from
+\texttt{B} and \texttt{X}. Assume that we vectorize by placing the rows
+of \texttt{R} and \texttt{Y} in vectors and joining them. to form
+\texttt{r} and \texttt{y}. Note that \texttt{r} and \texttt{y} are now
+different from their definitions in the case without covariates.
+
+We must repeat the basis matrix \texttt{B} for each subject and row of
+\texttt{X} for each bin. It is convenient to use Kronecker products:
+\texttt{BB\ =\ kronecker(rep(1,\ n),\ B)} and
+\texttt{XX\ =\ kronecker(X,\ rep(1,\ nt))}. Then
+\texttt{Q\ =\ cbind(BB,\ XX)}gives us the proper design matrix for
+penalized Poisson regression. The size of \texttt{BB} is
+\texttt{n\ *\ nt} rows and \texttt{nb} columns, while \texttt{XX} has
+the same number of rows and \texttt{nx} columns. With 1000 subjects, 100
+bins, 10 B-splines and 10 covariates, \texttt{Q} has 100000 rows and 20
+columns, or 2 million elements.
+
+The core of Poisson regression is the computation of
+\texttt{M\ =\ t(Q)\ \%*\%\ W\ \%*\%\ Q}, where
+\texttt{W\ =\ diag(mu\_)}. That can be achieved without forming
+\texttt{Q} explicitly. We can partition \texttt{M} as
+
+\texttt{M\ =\ rbind(cbind(Mbb,\ Mbx),\ cbind(t(Mbx),\ Mxx)))},
+
+with
+
+\texttt{Mbb\ =\ t(BB)\ \%*\%\ W\ \%*\%\ BB},
+\texttt{Mbx\ =\ t(BB)\ \%*\%\ W\ \%*\%\ XX} and
+\texttt{Mxx\ =\ t(XX)\ \%*\%\ W\ \%*\%\ XX}. These expressions show how
+the component matrices could be computed in an inefficient way by
+forming \texttt{BB} and \texttt{XX} and their weighted inner products.
+We apply efficient shortcuts instead.
+
+Because of the Kronecker structure of \texttt{BB} and \texttt{XX} we
+find that, with the expected counts in the matrix \texttt{Mu}, we have
+that \texttt{Mu{[}i,\ j{]}\ =\ R{[}i,\ j{]}\ *\ exp(Eta{[}i,\ j{]})},
+with \texttt{Eta{[}i,\ j{]}\ =\ eta0{[}i{]}\ +\ f{[}j{]}}, and
+\texttt{eta0\ =\ c(B\ \%*\%\ cb)} and \texttt{f\ =\ c(X\ \%*\%\ cx)}. It
+is necessary to use \texttt{c(.)} in both computations, because the
+product of a matrix and a vector returns a matrix with one column, not a
+vector. The \texttt{outer} function of R computes the sums conveniently:
+\texttt{Eta\ =\ outer(eta0,\ f,\ \textquotesingle{}+\textquotesingle{})},
+but if we do not apply \texttt{c(.)}, the result is a four-dimensional
+array, not a matrix.
+
+Because \texttt{W\ =\ diag(mu\_)} is a diagonal matrix, we compute
+\texttt{W\ \%*\%\ BB} as \texttt{mu\_\ *\ BB}, eliminating the
+construction of \texttt{W} and a matrix product. As
+\texttt{BB\ =\ kronecker(rep(1,\ n),\ B)}, it is \texttt{B} repeated
+\texttt{n} times and stacked. Consider two terms in
+\texttt{t(BB)\ \%*\%\ (mu\_\ *\ BB)} :
+
+\texttt{mu\_{[}1{]}\ *\ t(BB{[}1,{]})\ \%*\%\ BB{[}1,\ {]}\ +\ mu\_{[}n\ +\ 1{]}\ *\ t(BB{[}n\ +\ 1,\ {]})\ \%*\%\ BB{[}n\ +\ 1,\ {]}}.
+
+Because \texttt{BB{[}n\ +\ 1,\ {]}\ =\ BB{[}1,\ {]}\ =\ B{[}1,\ {]}}, we
+can write it as
+
+\texttt{(mu\_{[}1{]}\ +\ mu\_{[}n\ +\ 1{]})\ *\ t(B{[}1,{]})\ \%*\%\ B{[}1,\ {]}},
+showing that we can first add the proper elements of \texttt{mu\_} and
+then multiply with the outer product of the first row of \texttt{B} with
+itself. The same reasoning applies to rows 2, \texttt{n\ +\ 2}, etc. The
+sums are in fact the sums of the rows of \texttt{Mu} and thus
+\texttt{Mbb\ =\ t(B)\ \%*\%\ (wb\ *\ B)} with
+\texttt{wb\ =\ rowSums(Mu)}.
+
+A similar reasoning give us that
+\texttt{Mxx\ =\ t(X)\ \%*\%\ (wx\ *\ X)} with
+\texttt{wx\ =\ colsums(Mu)}, and the weighted cross product of
+\texttt{B} and \texttt{X} is obtained as
+\texttt{Mbx\ =\ t(B)\ \%*\%\ Mu\ \%*\%\ X}.
+
+
+
+\end{document}

@@ -1,0 +1,100 @@
+---
+title: "Smooth modeling of interval-censored survival data with {icpack}"
+author: "Hein Putter & Paul Eilers"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Smooth modeling of interval-censored survival data with {icpack}}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteEncoding[UTF-8]{inputenc}
+---
+
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4,
+                      echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Introduction
+
+This vignette shows how to use the package {`icpack`}, using the `drugusers` data set. A detailed description of the methods can be found in Putter, Gampe \& Eilers (2023).
+
+# Drug user data
+
+The drug users data are available after loading the package.
+
+```{r icpack}
+library(icpack)
+library(survival)
+```
+
+## Preliminaries
+
+There are three covariates (see the help file). Here is a summary of their frequencies and distribution.
+
+```{r dusersummary}
+table(drugusers$period)
+table(drugusers$gender)
+summary(drugusers$age)
+```
+
+## Using icfit
+
+The time-to-event data are interval censored. Here is a first fit. The output of the function `icfit` is an object of class `icfit`.
+
+```{r icf1}
+icf <- icfit(Surv(left, right, type = "interval2") ~ period + gender + age, data = drugusers)
+```
+
+Information about the estimated coefficients and their significance is obtained by printing the object.
+
+```{r printicf}
+print(icf)
+```
+
+The print method also gives basic information on the bins and splines used, as well as the effective dimension, log-likelihood, AIC, tuing parameter, number of iterations, number of subjects and evvents. A summary method is also available, which gives additional information on the iterations and on computation time.
+
+## Plotting
+
+A plot of the baseline hazard is obtained by plotting the object. The default option is to add shaded confidence intervals; they can be switched off if desired.
+
+```{r ploticf}
+plot(icf, title = 'Drug users')
+```
+
+Plots of the cumulative hazard and the survival function are also available.
+
+```{r ploticfit2}
+plot(icf, type = 'cumhazard', title = 'Drug users')
+plot(icf, type = 'survival', title = 'Drug users')
+```
+
+## Predicting
+
+The plot function above plots the baseline hazard. Suppose we are interested in the hazards and survival functions for a male aged 25 who started intravenous drug use in each of the four periods. We can use `predict` with a `newdata` object to obtain these hazards and survival functions.
+
+```{r predict}
+newd <- data.frame(period=1:4, gender=1, age=25)
+newd$period <- factor(newd$period, levels=1:4, labels=levels(drugusers$period))
+newd$gender <- factor(newd$gender, levels=1:2, labels=levels(drugusers$gender))
+picf <- predict(icf, newdata=newd)
+```
+
+The result is an object of class `predict.icfit`, which is (here) a list with 4 items (one for each subject), each containing a data frame with time points and hazards, cumulative hazards, survival functions at these time points with associated standard errors and confidence bounds. The `summary` method can be used to extract the hazards etc at specified time points.
+
+```{r summarypredicticfit}
+summary(picf, times=seq(0, 60, by=12))
+```
+
+Finally, the hazards or cumulative hazards or survival functions can be plotted.
+
+```{r plotpredicticfit}
+library(gridExtra)
+plot(picf, type="surv", ylim=c(0, 1),
+     xlab = "Months since start intravenous drug use",
+     title = levels(drugusers$period))
+```
+
+## References
+
+Putter, H., Gampe, J., Eilers, P. H. (2023). Smooth hazard regression for interval censored data. _Submitted for publication_.

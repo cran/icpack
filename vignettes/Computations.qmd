@@ -1,0 +1,63 @@
+---
+title: "Details of computations in the package `icpack`"
+author: "Paul Eilers"
+date: 2024-04-01
+format: pdf
+---
+
+## Introduction
+The package `icpack` fits survival models with a smooth semi-parametric baseline to interval-censored data, using P-splines. The proper amount of smoothing is obtained using a mixed model algorithm. The core is an Expectation-Maximization (EM) algorithm with proper calculation of standard errors. We have paid special attention to efficient computation, exploiting high-level matrix operations.
+
+This document presents technical details about the M-step that maximizes the penalized likelihood. Straightforward  organization of the computations leads to very large matrices. That can be avoided by recognizing and expliting their very regular structures. 
+
+The notation is a somewhat experimental mix of mathematics and `R` code.
+
+### Simple Poisson regression
+Our approach is based on Poisson regression. In the simple case without interval censoring, the data are the exact times of occurrence of either an event or censoring. We divide the time axis into a relatively large number, say `nt = 100`, intervals, which we call bins to avoid confusion with censoring intervals. In each bin we count the number of subjects at risk and the number of events, giving the vectors `r` and `y`, each with `nt` elements. 
+
+Each subjects adds a 1 to all bins in `r` in which it is at risk. If it experiences the event in bin `j`, 1 is added to `y[j]`; if it is censored it does not contribute anything to `y`.   
+
+We indicate the hazard with the vector `h`. If `mu` is the vector of expected values of `y`, then `mu = h * r` . We do not model `h` itself, but its logarithm, `eta`, writing it as a sum of B-splines: `eta = B %*% cb`, where the columns of `B` contain the B-splines and `cb` holds their coefficients. 
+
+To get a smooth log-hazard, we use a roughness penalty, which will be introduced later on. 
+
+The Poisson log-likelihood is `ll = sum(...)` and maximizing it with respect to `cb` leads to the non-linear system of equations `t(B) %*% (y - mu) = 0`. If `cb_` is an approximation to the solution, `mu_ = exp(B %*% cb_)`, and `M_ = diag(mu_)`, iterative solution of 
+
+`(t(B) %*% M_ %*% B) %*% cb = t(B) %*% (y - mu_ + M_ %*% B %*% cb_)` 
+
+leads to the final solution.
+
+The roughness penalty is `lambda * sum((D %*% cb) ^ 2)`, with `D = diff(diag(nb), diff = 2)`, a sum of squared (second order) differences of adjacent elements of `cb`. It was advocated by Eilers and Marx, as the penalty for P-splines. The system of equations changes to 
+
+`(t(B) %*% M_ %*% B + lambda * t(D) %*% D) %*% cb = t(B) %*% (y - mu_ + M_ %*% B %*% cb_)`.
+
+The computing load is light. The number of B-splines, `nb`, does not have to be large, say 20, so `B` is a relatively small matrix of 100 by 20, independent of the number of subjects in the data. As we will see soon, covariates complicate the picture a lot.
+
+### Poisson regression with covariates
+To handle covariates, given in the matrix `X` with `n` rows and `nx` columns, we assume proportional hazards and a smooth baseline hazard vector `h0 = exp(B %*% cb)`. With `H[i, j]`,  the hazard for subject `i` in bin `j`, we have `H[i, ] = exp(X[i, ] %*% cx + B %*% cb)`. 
+
+We can no longer work with vectors. The data are coded in two matrices, `R` and `Y`. Row `i` of `R` tells us in which bins subject `i` was at risk, while row `i` of `Y` records when the event occurred for this subject, if it occurred. Hence `Y[i, j] = 1` in case of an event of subject `i` in bin `j`.  If subject `ì` was censored, then row `ì` of `Y` contains only zeros.
+
+To do straightforward Poisson regression, we must vectorize `R`  and `Y` and construct an appropriate design matrix from `B` and `X`. Assume that we vectorize by placing the rows of `R` and `Y` in vectors and joining them. to form `r` and `y`. Note that `r` and `y` are now different from their definitions in the case without covariates.   
+
+We must repeat the basis matrix `B` for each subject and row  of `X` for each bin. It is convenient to use Kronecker products: `BB = kronecker(rep(1, n), B)` and `XX = kronecker(X, rep(1, nt))`. Then `Q = cbind(BB, XX)`gives us the proper design matrix for penalized Poisson regression. The size of `BB` is `n * nt` rows and `nb` columns, while `XX` has the same number of rows and `nx` columns. With 1000 subjects, 100 bins, 10 B-splines and 10 covariates, `Q` has 100000 rows and 20 columns, or 2 million elements.
+
+The core of Poisson regression is the computation of `M = t(Q) %*% W %*% Q`, where `W = diag(mu_)`. That can be achieved without forming `Q` explicitly. We can partition `M` as
+
+`M = rbind(cbind(Mbb, Mbx), cbind(t(Mbx), Mxx)))`, 
+
+with 
+
+`Mbb = t(BB) %*% W %*% BB`, `Mbx = t(BB) %*% W %*% XX` and `Mxx = t(XX) %*% W %*% XX`. These expressions show how the component matrices could be computed in an inefficient way by forming `BB` and `XX` and their weighted inner products. We apply efficient shortcuts instead.
+
+Because of the Kronecker structure of `BB` and `XX` we find that, with the expected counts in the matrix `Mu`, we have that `Mu[i, j] = R[i, j] * exp(Eta[i, j])`, with `Eta[i, j] = eta0[i] + f[j]`, and `eta0 = c(B %*% cb)` and `f = c(X %*% cx)`. It is necessary to use `c(.)` in both computations, because the product of a matrix and a vector returns a matrix with one column, not a vector. The `outer` function of R computes the sums conveniently: `Eta = outer(eta0, f, '+')`, but if we do not apply `c(.)`, the result is a four-dimensional array, not a matrix.
+
+Because `W = diag(mu_)` is a diagonal matrix, we compute `W %*% BB` as `mu_ * BB`, eliminating the construction of `W` and a matrix product. As `BB = kronecker(rep(1, n), B)`, it is `B` repeated `n` times and stacked. Consider two terms in `t(BB) %*% (mu_ * BB)` : 
+
+`mu_[1] * t(BB[1,]) %*% BB[1, ] + mu_[n + 1] * t(BB[n + 1, ]) %*% BB[n + 1, ]`.
+
+Because `BB[n + 1, ] = BB[1, ] = B[1, ]`, we can write it as 
+
+`(mu_[1] + mu_[n + 1]) * t(B[1,]) %*% B[1, ]`, showing that we can first add the proper elements of `mu_` and then multiply with the outer product of the first row of `B` with itself. The same reasoning applies to  rows 2, `n + 2`, etc. The sums are in fact the sums of the rows of `Mu` and thus `Mbb = t(B) %*% (wb * B)` with `wb = rowSums(Mu)`.
+
+A similar reasoning give us that `Mxx = t(X) %*% (wx * X)` with `wx = colsums(Mu)`, and the weighted cross product of `B` and `X` is obtained as `Mbx = t(B) %*% Mu %*% X`.
